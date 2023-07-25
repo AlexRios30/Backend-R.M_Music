@@ -125,9 +125,9 @@ const registerProducer = asyncHandler(async(req, res) => {
 });
 
 const registerArtist = asyncHandler(async(req, res) => {
-    const { name, email, cellphone, password, roles} = req.body
+    const { name, email, cellphone, country, songs, nameSong, linkSong, password, roles} = req.body
 
-    if (!name || !email || !cellphone || !password ) {
+    if (!name || !email || !cellphone || !password || !country || !songs ) {
         res.status(400)
         throw new Error('Please add all fields')
     }
@@ -149,6 +149,10 @@ const registerArtist = asyncHandler(async(req, res) => {
         name,
         email,
         cellphone,
+        country,
+        songs: [
+          {nameSong: songs, linkSong}
+        ],
         password: hashedPassword,
     })
 
@@ -166,6 +170,8 @@ const registerArtist = asyncHandler(async(req, res) => {
             name: userArtist.name,
             email: userArtist.email,
             cellphone: userArtist.cellphone,
+            country: userArtist.country,
+            songs: userArtist.songs,
             rol: userArtist.roles,
             token: generateToken(userArtist._id)
         })
@@ -371,7 +377,7 @@ const getRole = asyncHandler(async(req, res) =>{
         res.status(200).json({
             
           roles,
-        //   idUserParking
+        //   idUserProducer
 
         });
     }
@@ -380,7 +386,7 @@ const getRole = asyncHandler(async(req, res) =>{
         res.status(200).json({
             
           roles,
-        //   idUserParking
+        //   idUserArtist
 
         });
         
@@ -394,75 +400,78 @@ const getUser = asyncHandler(async(req, res) => {
     const user = await User.findOne({ email: email });
 
   if (user) {
-    const { _id, name, email, cellphone, license, idUser, vehicle, roles, placa } = user;
+    const { _id, name, email, cellphone, roles} = user;
     res.status(200).json({
       _id,
       name,
       email,
       cellphone,
-      license,
-      vehicle,
-      idUser,
       roles,
-      placa
     });
   } else {
     res.status(404).json({ message: 'Usuario no encontrado' });
   }
 });
 
-const getUserParking = asyncHandler(async(req, res) => {
-    const { email } = req.body;
-    const userParking = await UserParking.findOne({ email: email });
-    if (userParking) {
-        const { _id, name, email, cellphone, idUserParking, nameParking, address, cellphoneParking, hourStart, hourEnd,  priceCar, priceMotorcycle, nit, capacity, location, allUrls } = userParking;
-        
-        res.status(200).json({
-            id: _id,
-            name,
-            email,
-            cellphone,
-            idUserParking,
-            nameParking,
-            address,
-            cellphoneParking,
-            hourStart,
-            hourEnd,
-            priceCar,
-            location,
-            priceMotorcycle,
-            nit,
-            allUrls,
-            capacity
-        });
-    } else {
-      res.status(404).json({ message: 'Usuario no encontrado' });
-    }
+const getUserProducer = asyncHandler(async(req, res) => {
+  const { email } = req.body;
+  const userProducer = await Producer.findOne({ email: email });
+
+if (userProducer) {
+  const { _id, name, email, cellphone, roles} = userProducer;
+  res.status(200).json({
+    _id,
+    name,
+    email,
+    cellphone,
+    roles,
+  });
+} else {
+  res.status(404).json({ message: 'Usuario no encontrado' });
+}
 });
 
-const getAllParking = asyncHandler(async(req, res) => {
-    UserParking.find().then((data, err) => {
-        if (err) {
-          console.error(err);
-          res.status(500).send('Error de servidor');
-        } else {
-          res.json(data);
-        }
-      });
+const getUserArtist = asyncHandler(async(req, res) => {
+  const { email } = req.body;
+  const userArtist = await Artist.findOne({ email: email });
+
+if (userArtist) {
+  const { _id, name, email, cellphone, roles} = userArtist;
+  res.status(200).json({
+    _id,
+    name,
+    email,
+    cellphone,
+    roles,
+  });
+} else {
+  res.status(404).json({ message: 'Usuario no encontrado' });
+}
 });
+
+// const getAllParking = asyncHandler(async(req, res) => {
+//     UserParking.find().then((data, err) => {
+//         if (err) {
+//           console.error(err);
+//           res.status(500).send('Error de servidor');
+//         } else {
+//           res.json(data);
+//         }
+//       });
+// });
 
 const updateUser = asyncHandler(async(req, res) => {
-    const { idUser } = req.params;
+    const { _id } = req.params;
     const { name, cellphone } = req.body;
 
     try {
-      const user = await User.findOne({idUser});
+      const user = await User.findOne(_id);
       if(user){
         const newInfo ={
           name: name,
           cellphone: cellphone,
         }
-        await User.updateOne({idUser: idUser}, {$set: newInfo})
+        await User.updateOne({id: _id}, {$set: newInfo})
         res.status(200).send('Datos Actualizados Correctamente');
       }
     } catch (err) {
@@ -470,34 +479,42 @@ const updateUser = asyncHandler(async(req, res) => {
     }
 });
 
-const updateUserParking = asyncHandler(async(req, res) => {
-    const { idUserParking } = req.params;
-    const { name, cellphone, address, cellphoneParking } = req.body;
-    
-    try {
-      const parking = await UserParking.findOne({ idUserParking });
-      if (parking) {
-        const newInfo = {
-          name: name,
-          cellphone: cellphone,
-          address: address,
-          cellphoneParking: cellphoneParking,
-        };
-        await UserParking.updateOne({ idUserParking: idUserParking }, { $set: newInfo });
-        res.status(200).send('Datos Actualizados Correctamente');
-      }
-    } catch (err) {
-      res.status(500).json({ error: 'Error al actualizar los datos del usuario' });
-    }
+const updateUserProducer = asyncHandler(async(req, res) => {
+  const { _id } = req.params;
+  const { name, cellphone } = req.body;
 
-    // UserParking.findOneAndUpdate(idUserParking, { name, cellphone, address, cellphoneParking }, { new: true })
-    //     .then(updatedUserParking => {
-    //      res.json(updatedUserParking);
-    // })
-    // .catch(error => {
-    //   res.status(500).json({ error: 'Error al actualizar los datos del usuario' });
-    //   console.log(error.message);
-    // });
+  try {
+    const user = await User.findOne(_id);
+    if(user){
+      const newInfo ={
+        name: name,
+        cellphone: cellphone,
+      }
+      await User.updateOne({id: _id}, {$set: newInfo})
+      res.status(200).send('Datos Actualizados Correctamente');
+    }
+  } catch (err) {
+    res.status(500).json({ err: 'Error al actualizar los datos del usuario' });
+  }
+});
+
+const updateUserArtist = asyncHandler(async(req, res) => {
+  const { _id } = req.params;
+  const { name, cellphone } = req.body;
+
+  try {
+    const user = await User.findOne(_id);
+    if(user){
+      const newInfo ={
+        name: name,
+        cellphone: cellphone,
+      }
+      await User.updateOne({id: _id}, {$set: newInfo})
+      res.status(200).send('Datos Actualizados Correctamente');
+    }
+  } catch (err) {
+    res.status(500).json({ err: 'Error al actualizar los datos del usuario' });
+  }
 });
 
 const search = asyncHandler(async(req, res) => {
@@ -669,91 +686,88 @@ const updateSpaceById = asyncHandler(async(req, res) => {
     });
 });
 
-const addVehiclesToUser = asyncHandler(async (req, res) => {
-  const { idUser } = req.params; // Obtener el ID del usuario desde los parámetros de la solicitud
-  const { placa, model, typeVehicle } = req.body; // Obtener los datos del vehículo del cuerpo de la solicitud
+const addSongsToArtist = asyncHandler(async (req, res) => {
+  const { _id } = req.params; // Obtener el ID del usuario desde los parámetros de la solicitud
+  const { nameSong, linkSong } = req.body; // Obtener los datos del vehículo del cuerpo de la solicitud
 
   try {
     // Buscar al usuario por su ID
-    const user = await User.findOne({idUser});
+    const userArtist = await Artist.findOne(_id);
 
-    if (!user) {
+    if (!userArtist) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     // Crear un nuevo objeto de vehículo
-    const newVehicle = {
-      placa,
-      model,
-      typeVehicle
+    const newSong = {
+      nameSong,
+      linkSong
     };
 
     // Agregar el vehículo al arreglo de vehículos del usuario
-    user.vehicle.push(newVehicle);
+    userArtist.songs.push(newSong);
 
     // Guardar los cambios en el usuario
-    await user.save();
+    await userArtist.save();
 
-    res.status(201).json({ message: 'Vehicle created', vehicle: newVehicle });
+    res.status(201).json({ message: 'Song add', songs: newSong });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-const updateVehicles = asyncHandler(async (req, res) => {
-  const { idUser, vehicleId } = req.params; // Obtener los IDs del usuario y del vehículo de los parámetros de la URL
-  const { placa, model, license, typeVehicle } = req.body; // Obtener los datos actualizados del vehículo del cuerpo de la solicitud
+const updateSongsArtist = asyncHandler(async (req, res) => {
+  const { _id, songsId } = req.params; // Obtener los IDs del usuario y del vehículo de los parámetros de la URL
+  const { nameSong, linkSong } = req.body; // Obtener los datos actualizados del vehículo del cuerpo de la solicitud
 
   try {
     // Buscar al usuario por su ID
-    const user = await User.findOne({idUser});
+    const userArtist = await Artist.findOne(_id);
 
-    if (!user) {
+    if (!userArtist) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     // Buscar el vehículo por su ID en el arreglo de vehículos del usuario
-    const vehicle = user.vehicle.id(vehicleId);
+    const song = userArtist.songs.id(songsId);
 
-    if (!vehicle) {
-      return res.status(404).json({ message: 'Vehicle not found' });
+    if (!song) {
+      return res.status(404).json({ message: 'Song not found' });
     }
 
     // Actualizar los datos del vehículo
-    vehicle.placa = placa;
-    vehicle.model = model;
-    vehicle.license = license;
-    vehicle.typeVehicle = typeVehicle;
+    song.nameSong = nameSong;
+    song.linkSong = linkSong;
 
     // Guardar los cambios en el usuario
-    await user.save();
+    await userArtist.save();
 
-    res.status(200).json({ message: 'Vehicle updated', vehicle });
+    res.status(200).json({ message: 'Song updated', song });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-const deleteVehicles = asyncHandler(async (req, res) => {
+const deleteSongsArtist = asyncHandler(async (req, res) => {
   try {
-    const { idUser, vehicleId } = req.params;
+    const { _id, songId } = req.params;
 
-    const user = await User.findOne({idUser});
+    const userArtist = await Artist.findOne(_id);
 
-    if (!user) {
+    if (!userArtist) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
     // Filtrar el vehículo a eliminar
-    user.vehicle = user.vehicle.filter((vehicle) => vehicle._id != vehicleId);
+    userArtist.songs = userArtist.songs.filter((songs) => songs._id != songId);
 
-    await user.save();
+    await userArtist.save();
 
-    res.json({ message: 'Vehículo eliminado exitosamente' });
+    res.json({ message: 'Canción eliminado exitosamente' });
   } catch (error) {
-    res.status(500).json({ message: 'Error al eliminar el vehículo' });
+    res.status(500).json({ message: 'Error al eliminar la canción' });
     console.log(error);
   }
 });
@@ -771,13 +785,15 @@ module.exports = {
     registerArtist,
     loginUsers,
     updateUser,
-    updateUserParking,
+    updateUserProducer,
+    updateUserArtist,
     getRole,
     getUser,
-    getUserParking,
+    getUserProducer,
+    getUserArtist,
     recoverPassword,
     resetUpdatePassword,
-    getAllParking,
+    // getAllParking,
     search,
     getBooking,
     getBookingById,
@@ -785,7 +801,7 @@ module.exports = {
     createBooking,
     getUserSpaces,
     updateSpaceById,
-    addVehiclesToUser,
-    updateVehicles,
-    deleteVehicles
+    addSongsToArtist,
+    updateSongsArtist,
+    deleteSongsArtist
 }
